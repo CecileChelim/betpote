@@ -27,11 +27,12 @@ export default function CreateBet() {
   const [error, setError]     = useState(null)
 
   // Form state
-  const [title, setTitle]       = useState('')
-  const [choices, setChoices]   = useState(['Oui', 'Non'])
-  const [gain, setGain]         = useState('')
-  const [endDate, setEndDate]   = useState('')
-  const [creator, setCreator]   = useState('')
+  const [title, setTitle]         = useState('')
+  const [choices, setChoices]     = useState(['Oui', 'Non'])
+  const [gain, setGain]           = useState('')
+  const [endDate, setEndDate]     = useState('')
+  const [creator, setCreator]     = useState('')
+  const [creatorEmail, setCreatorEmail] = useState('')
 
   function addChoice() {
     setChoices(prev => [...prev, ''])
@@ -53,8 +54,8 @@ export default function CreateBet() {
       // Insert bet
       const { data: bet, error: betErr } = await supabase
         .from('bets')
-        .insert({ title, creator, gain, end_date: endDate })
-        .select()
+        .insert({ title, creator, gain, end_date: endDate, creator_email: creatorEmail.trim().toLowerCase() || null })
+        .select('id, edit_token')
         .single()
 
       if (betErr) throw betErr
@@ -67,7 +68,7 @@ export default function CreateBet() {
       const { error: choicesErr } = await supabase.from('choices').insert(choiceRows)
       if (choicesErr) throw choicesErr
 
-      navigate(`/success/${bet.id}`, { state: { title, gain } })
+      navigate(`/success/${bet.id}`, { state: { title, gain, editToken: bet.edit_token } })
     } catch (e) {
       setError(e.message)
     } finally {
@@ -215,6 +216,18 @@ export default function CreateBet() {
                 maxLength={30}
                 className="w-full border border-[#E4E7F5] rounded-2xl px-4 py-3 text-[15px] outline-none focus:border-[#3D6EFF] transition-colors"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-[#7A7D95] mb-2">📧 Ton email</label>
+              <input
+                type="email"
+                value={creatorEmail}
+                onChange={e => setCreatorEmail(e.target.value)}
+                placeholder="Ex : thomas@email.com"
+                className="w-full border border-[#E4E7F5] rounded-2xl px-4 py-3 text-[15px] outline-none focus:border-[#3D6EFF] transition-colors"
+              />
+              <p className="text-xs text-[#B0B3CB] mt-1.5">Pour obtenir ton lien de modification et supprimer le pari.</p>
             </div>
 
             {error && (

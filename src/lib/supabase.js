@@ -12,12 +12,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 -- 1. TABLE BETS
 create table public.bets (
-  id          uuid primary key default gen_random_uuid(),
-  title       text not null,
-  creator     text not null,
-  gain        text not null,
-  end_date    date not null,
-  created_at  timestamptz default now()
+  id             uuid primary key default gen_random_uuid(),
+  title          text not null,
+  creator        text not null,
+  gain           text not null,
+  end_date       date not null,
+  creator_email  text,
+  edit_token     uuid default gen_random_uuid(),
+  created_at     timestamptz default now()
 );
 
 -- 2. TABLE CHOICES
@@ -46,6 +48,8 @@ alter table public.votes   enable row level security;
 
 create policy "bets_read"   on public.bets    for select using (true);
 create policy "bets_insert" on public.bets    for insert with check (true);
+create policy "bets_update" on public.bets    for update using (true) with check (true);
+create policy "bets_delete" on public.bets    for delete using (true);
 
 create policy "choices_read"   on public.choices for select using (true);
 create policy "choices_insert" on public.choices for insert with check (true);
@@ -58,6 +62,13 @@ create view public.vote_counts as
   select choice_id, count(*) as total
   from public.votes
   group by choice_id;
+
+-- 6. MIGRATION (si la table bets existe déjà) :
+-- alter table public.bets add column if not exists creator_email text;
+-- alter table public.bets add column if not exists edit_token uuid default gen_random_uuid();
+-- update public.bets set edit_token = gen_random_uuid() where edit_token is null;
+-- create policy "bets_update" on public.bets for update using (true) with check (true);
+-- create policy "bets_delete" on public.bets for delete using (true);
 
 ====================================================
 */

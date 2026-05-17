@@ -15,7 +15,7 @@ export default function ShareButtons({ betId, title }) {
       <button onClick={copyLink} className="flex items-center justify-center gap-2 border border-[#E4E7F5] text-[#7A7D95] font-semibold text-sm rounded-2xl py-3.5 hover:bg-[#F4F6FF] transition-colors">
         {copied ? "✓ Lien copié !" : "🔗 Copier le lien"}
       </button>
-      <div className="bg-[#F4F6FF] rounded-xl px-4 py-3"><span className="text-xs text-[#7A7D95] truncate">{url}</span></div>
+      <div className="bg-[#F4F6FF] rounded-xl px-4 py-3 overflow-hidden"><span className="text-xs text-[#7A7D95] break-all">{url}</span></div>
     </div>
   )
 }

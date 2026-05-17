@@ -15,12 +15,20 @@ export default function BetDetail() {
   const token      = useVoterToken()
   const { bet, choices, loading, error } = useBet(id)
 
-  const [selected, setSelected]     = useState(null)   // choiceId user clicked
-  const [existingVote, setExisting] = useState(null)   // choiceId from DB
+  const [selected, setSelected]     = useState(null)
+  const [existingVote, setExisting] = useState(null)
   const [voterName, setVoterName]   = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitErr, setSubmitErr]   = useState(null)
   const [revealed, setRevealed]     = useState(false)
+
+  // Gérer ce pari
+  const [showManage, setShowManage]     = useState(false)
+  const [manageEmail, setManageEmail]   = useState('')
+  const [manageLoading, setManageLoading] = useState(false)
+  const [manageErr, setManageErr]       = useState(null)
+  const [editToken, setEditToken]       = useState(null)
+  const [linkCopied, setLinkCopied]     = useState(false)
 
   // Check if this token already voted
   useEffect(() => {
@@ -59,6 +67,35 @@ export default function BetDetail() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function getEditLink() {
+    if (!manageEmail.trim()) return
+    setManageLoading(true)
+    setManageErr(null)
+    try {
+      const { data } = await supabase
+        .from('bets')
+        .select('edit_token')
+        .eq('id', id)
+        .eq('creator_email', manageEmail.trim().toLowerCase())
+        .maybeSingle()
+      if (!data) {
+        setManageErr("Aucun pari créé avec cet email.")
+      } else {
+        setEditToken(data.edit_token)
+      }
+    } catch (e) {
+      setManageErr(e.message)
+    } finally {
+      setManageLoading(false)
+    }
+  }
+
+  function copyEditLink() {
+    navigator.clipboard.writeText(`${window.location.origin}/edit/${id}?token=${editToken}`)
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
   }
 
   const timeLeft = isExpired
@@ -184,6 +221,66 @@ export default function BetDetail() {
         <div className="px-5 pt-4 pb-2">
           <p className="text-xs font-bold uppercase tracking-widest text-[#7A7D95] mb-3">Partager ce pari</p>
           <ShareButtons betId={id} title={bet.title} />
+        </div>
+
+        {/* Gérer ce pari */}
+        <div className="px-5 pt-2 pb-6">
+          <button
+            onClick={() => { setShowManage(s => !s); setManageErr(null) }}
+            className="w-full flex items-center justify-between text-xs font-bold uppercase tracking-widest text-[#B0B3CB] py-3 border-t border-[#F4F6FF] hover:text-[#7A7D95] transition-colors"
+          >
+            <span>Gérer ce pari</span>
+            <span>{showManage ? '↑' : '↓'}</span>
+          </button>
+
+          {showManage && (
+            <div className="mt-3 space-y-3">
+              {!editToken ? (
+                <>
+                  <p className="text-xs text-[#7A7D95]">
+                    Si tu as créé ce pari, entre ton email pour obtenir ton lien de modification.
+                  </p>
+                  <input
+                    type="email"
+                    value={manageEmail}
+                    onChange={e => setManageEmail(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && getEditLink()}
+                    placeholder="ton@email.com"
+                    className="w-full border border-[#E4E7F5] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#3D6EFF] transition-colors"
+                  />
+                  {manageErr && <p className="text-xs text-red-500">{manageErr}</p>}
+                  <button
+                    onClick={getEditLink}
+                    disabled={!manageEmail.trim() || manageLoading}
+                    className="w-full border border-[#E4E7F5] text-[#7A7D95] font-semibold text-sm rounded-xl py-3 hover:bg-[#F4F6FF] disabled:opacity-40 transition-colors"
+                  >
+                    {manageLoading ? 'Vérification…' : '→ Obtenir mon lien de gestion'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-[#00835A] font-semibold">✅ Email vérifié ! Voici ton lien de gestion :</p>
+                  <div className="bg-[#F4F6FF] rounded-xl px-3 py-2.5 text-xs text-[#7A7D95] break-all">
+                    {`${window.location.origin}/edit/${id}?token=${editToken}`}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyEditLink}
+                      className="flex-1 border border-[#E4E7F5] text-[#7A7D95] font-semibold text-sm rounded-xl py-2.5 hover:bg-[#F4F6FF] transition-colors"
+                    >
+                      {linkCopied ? '✓ Copié !' : '🔗 Copier'}
+                    </button>
+                    <a
+                      href={`mailto:${manageEmail}?subject=Lien de gestion BetPote&body=Voici ton lien pour modifier ou supprimer ton pari :%0A${window.location.origin}/edit/${id}?token=${editToken}`}
+                      className="flex-1 border border-[#E4E7F5] text-[#7A7D95] font-semibold text-sm rounded-xl py-2.5 hover:bg-[#F4F6FF] transition-colors text-center"
+                    >
+                      📧 M'envoyer
+                    </a>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

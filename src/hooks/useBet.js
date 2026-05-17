@@ -9,7 +9,7 @@ export function useBet(betId) {
   async function fetchBet() {
     setLoading(true)
     try {
-      const { data: betData, error: betErr } = await supabase.from("bets").select("*").eq("id", betId).single()
+      const { data: betData, error: betErr } = await supabase.from("bets").select("id, title, creator, gain, end_date, created_at").eq("id", betId).single()
       if (betErr) throw betErr
       const { data: choicesData, error: choicesErr } = await supabase.from("choices").select("*").eq("bet_id", betId).order("position")
       if (choicesErr) throw choicesErr
