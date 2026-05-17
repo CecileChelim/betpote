@@ -1,4 +1,4 @@
-﻿import { useState } from "react"
+import { useState } from "react"
 export default function ShareButtons({ betId, title }) {
   const [copied, setCopied] = useState(false)
   const url = `${window.location.origin}/bet/${betId}`
